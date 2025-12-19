@@ -23,6 +23,7 @@
 4.  **PostgreSQL (Docker Container):** Надежно хранит данные на порту `5433` внутри изолированной сети `docker-network`.
 
 ```mermaid
+graph LR
     User(Пользователь 👤) -- "HTTP Fetch" --> Front(Frontend)
     Front -- "REST API :8080" --> Back(Spring Boot Container)
     Back -- "JDBC :5433" --> DB[(PostgreSQL Container)]
