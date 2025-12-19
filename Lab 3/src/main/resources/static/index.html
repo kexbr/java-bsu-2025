@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cactus Tracker & Oracle</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+            text-align: center;
+            padding: 40px;
+            background: #f0fff0;
+            color: #333;
+        }
+        .mood-btn {
+            padding: 12px 25px;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 12px;
+            border: none;
+            margin: 5px;
+            color: white;
+            transition: transform 0.1s;
+        }
+        .mood-btn:active { transform: scale(0.95); }
+        .happy { background-color: #4CAF50; }
+        .angry { background-color: #f44336; }
+        .delete-btn { background-color: #555; font-size: 14px; margin-top: 20px;}
+
+        .oracle-box {
+            background: white;
+            padding: 20px;
+            margin: 20px auto;
+            max-width: 400px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        input {
+            width: 70%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        .ask-btn {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .log {
+            margin-top: 30px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+        }
+        .entry {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            border-left: 5px solid #ccc;
+        }
+        /* Разные цвета полосок для разных типов записей */
+        .type-mood { border-left-color: #4CAF50; }
+        .type-qa { border-left-color: #2196F3; }
+    </style>
+</head>
+<body>
+<h1>🌵 Кактус: Трекер и Оракул</h1>
+
+<button class="mood-btn happy" onclick="sendMood('Счастлив 🌊')">Полить</button>
+<button class="mood-btn angry" onclick="sendMood('Колюч 🌵')">Ткнуть</button>
+
+<div class="oracle-box">
+    <h3>Задай питання кактусу:</h3>
+    <input type="text" id="questionInput" placeholder="Здам я лабу?">
+    <br>
+    <button class="ask-btn" onclick="sendQuestion()">Запитати</button>
+</div>
+
+<button class="mood-btn delete-btn" onclick="clearHistory()">🗑️ Очистить историю</button>
+
+<div class="log" id="history">Загрузка...</div>
+
+<script>
+    async function load() {
+        const res = await fetch('/api/cactus');
+        const data = await res.json();
+
+        document.getElementById('history').innerHTML = data.map(i => {
+            const date = new Date(i.time).toLocaleString();
+
+            if (i.question) {
+                return `
+                <div class="entry type-qa">
+                    <small style="color:gray">${date}</small><br>
+                    ❓ <b>${i.question}</b><br>
+                    🌵 <i>${i.answer}</i>
+                </div>`;
+            }
+            else {
+                return `
+                <div class="entry type-mood">
+                    <small style="color:gray">${date}</small><br>
+                    Статус: <b>${i.mood}</b>
+                </div>`;
+            }
+        }).reverse().join('');
+    }
+
+    async function sendMood(mood) {
+        await fetch('/api/cactus', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: mood
+        });
+        load();
+    }
+
+    async function sendQuestion() {
+        const input = document.getElementById('questionInput');
+        const question = input.value;
+        if (!question) return;
+
+        await fetch('/api/cactus/ask', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: question
+        });
+        input.value = '';
+        load();
+    }
+
+    async function clearHistory() {
+        if(!confirm("Точно удалить всё?")) return;
+
+        await fetch('/api/cactus', {
+            method: 'DELETE'
+        });
+        load();
+    }
+
+    load();
+</script>
+</body>
+</html>
